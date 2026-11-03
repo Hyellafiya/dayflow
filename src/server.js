@@ -31,7 +31,12 @@ app.use("/api", rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false
 }));
-
+import {
+  createGoogleAuthorization,
+  completeGoogleAuthorization,
+  getGoogleConnection,
+  disconnectGoogle
+} from "./lib/google-oauth.js";
 app.locals.supabase = createAuthClient();
 
 function userDb(req) {
@@ -380,21 +385,91 @@ app.post("/api/email/send", requireUser, (_req, res) => {
   });
 });
 
+
 app.get(
   "/api/connectors/google/status",
   requireUser,
-  (_req, res) => {
-    res.json({
-      configured: Boolean(
-        process.env.GOOGLE_CLIENT_ID &&
-        process.env.GOOGLE_CLIENT_SECRET
-      ),
-      connected: false,
-      message:
-        "Google OAuth connection flow is not implemented yet."
-    });
+  async (req, res) => {
+    try {
+      const connection = await getGoogleConnection(req.user.id);
+
+      res.json({
+        configured: true,
+        ...connection
+      });
+    } catch (error) {
+      console.error("Google status:", error.message);
+      res.status(503).json({
+        configured: false,
+        connected: false,
+        error: "Google connection status is unavailable."
+      });
+    }
   }
 );
+
+app.post(
+  "/api/connectors/google/start",
+  requireUser,
+  async (req, res) => {
+    try {
+      const authUrl = await createGoogleAuthorization(req.user.id);
+      res.json({ authUrl });
+    } catch (error) {
+      console.error("Google OAuth start:", error.message);
+      res.status(503).json({
+        error: "Could not start Google authorization. Check server configuration."
+      });
+    }
+  }
+);
+
+app.get("/api/connectors/google/callback", async (req, res) => {
+  const appUrl = process.env.APP_URL || "https://day-flow-iota.vercel.app";
+
+  if (req.query.error) {
+    return res.redirect(
+      302,
+      `${appUrl}/?google=error#integrations`
+    );
+  }
+
+  try {
+    await completeGoogleAuthorization(
+      String(req.query.code || ""),
+      String(req.query.state || "")
+    );
+
+    return res.redirect(
+      302,
+      `${appUrl}/?google=connected#integrations`
+    );
+  } catch (error) {
+    console.error("Google OAuth callback:", error.message);
+
+    return res.redirect(
+      302,
+      `${appUrl}/?google=error#integrations`
+    );
+  }
+});
+
+app.post(
+  "/api/connectors/google/disconnect",
+  requireUser,
+  async (req, res) => {
+    try {
+      await disconnectGoogle(req.user.id);
+      res.json({ disconnected: true });
+    } catch (error) {
+      console.error("Google disconnect:", error.message);
+      res.status(500).json({
+        error: "Could not disconnect Google."
+      });
+    }
+  }
+);
+
 
 app.get(
   "/api/connectors/google/start",
