@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const $=id=>document.getElementById(id);
-const S={supabase:null,session:null,config:null,tasks:[],active:null,page:"overview",authMode:"signin",filter:"all",query:"",activityFilter:"all",settingsTab:"Profile",health:{}};
+const S={supabase:null,session:null,config:null,tasks:[],active:null,page:"overview",authMode:"signin",filter:"all",query:"",activityFilter:"all",settingsTab:"Profile",health:{},google:{connected:false,email:null,configured:false}};
 const names={overview:["Overview","A clear view of what you're working on."],tasks:["My tasks","Plans, progress, and outcomes in one place."],projects:["Projects","Group related tasks into meaningful outcomes."],calendar:["Calendar","A lightweight view of what needs your attention."],inbox:["Inbox","Your review queue for things that need a decision."],research:["Research studio","Turn questions into structured research tasks."],documents:["Documents","Create useful documents from a clear brief."],email:["Email studio","Draft carefully and review before sending."],browser:["Browser tasks","Plan browser work and review actions."],analytics:["Analytics","Understand your activity and progress."],integrations:["Integrations","Connect services that power your workflow."],activity:["Activity log","A timeline of task updates and outcomes."],billing:["Plans & billing","Understand your plan and subscription status."],settings:["Settings","Manage your account and workspace preferences."]};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pretty=s=>String(s||"unknown").replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
@@ -11,6 +11,14 @@ async function loadConfig(){try{const r=await fetch("/api/config",{cache:"no-sto
 async function enter(session){S.session=session;$("authGate").hidden=true;$("appShell").hidden=false;const email=session.user?.email||"Your account";$("userName").textContent=email.split("@")[0];$("userEmail").textContent=email;$("userAvatar").textContent=$("topAvatar").textContent=(email[0]||"U").toUpperCase();await Promise.all([loadHealth(),loadTasks()]);render()}
 async function api(url,opt={}){const h={...(opt.headers||{})};if(S.session?.access_token)h.Authorization=`Bearer ${S.session.access_token}`;if(opt.body)h["Content-Type"]="application/json";const r=await fetch(url,{...opt,headers:h});const t=await r.text();let data={};try{data=t?JSON.parse(t):{}}catch{data={error:t}}if(!r.ok)throw Error(data.error||`Request failed (${r.status})`);return data}
 async function loadHealth(){try{S.health=await api("/api/health");$("systemDot").className=S.health.authConfigured?"ok":"bad";$("systemStatus").textContent=S.health.authConfigured?"Workspace connected":"Setup needed"}catch{$("systemDot").className="bad";$("systemStatus").textContent="Service unavailable"}}
+async function loadGoogleStatus(){
+  try{
+    S.google=await api("/api/connectors/google/status");
+  }catch(e){
+    S.google={connected:false,email:null,configured:false};
+    console.error("Google status:",e.message);
+  }
+}
 async function loadTasks(){try{const r=await api("/api/tasks");S.tasks=Array.isArray(r)?r:[];$("taskCount").textContent=S.tasks.length}catch(e){if(!/sign in|session/i.test(e.message))toast(e.message,"error")}}
 function heading(key,action=""){const [title,desc]=names[key]||names.overview;return `<div class="heading"><div><small class="kicker">✦ DAYFLOW WORKSPACE</small><h1>${title}</h1><p>${desc}</p></div>${action}</div>`}
 function tag(s){return `<span class="tag ${esc(s)}">${esc(pretty(s))}</span>`}
