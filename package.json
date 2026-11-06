@@ -1,26 +1,23 @@
 {
-  "name": "dayflow-saas",
-  "version": "1.0.0",
+  "name": "dayflow",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "check": "node --check src/server.js && node --check src/lib/store.js && node --check src/lib/auth.js && node --check public/app.js",
+    "check": "node --check src/server.js && node --check src/lib/auth.js && node --check src/lib/supabase-store.js && node --check public/app.js",
     "test": "node --test"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
+    "dotenv": "^16.6.1",
     "express": "^5.1.0",
-    "helmet": "^8.1.0",
     "express-rate-limit": "^8.1.0",
-    "zod": "^3.25.76",
-    "dotenv": "^16.6.1"
+    "helmet": "^8.1.0",
+    "zod": "^3.25.76"
   }
-"build": "esbuild public/app.js --bundle --format=esm --outfile=public/app.bundle.js",
-  "devDependencies": {
-  "esbuild": "^0.25.0"
 }
-}
-
