@@ -18,4 +18,9 @@
     "zod": "^3.25.76",
     "dotenv": "^16.6.1"
   }
+"build": "esbuild public/app.js --bundle --format=esm --outfile=public/app.bundle.js",
+  "devDependencies": {
+  "esbuild": "^0.25.0"
 }
+}
+
