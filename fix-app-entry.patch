@@ -1,0 +1,6 @@
+diff --git a/public/index.html b/public/index.html
+--- a/public/index.html
++++ b/public/index.html
+@@
+-<div id="toastRegion" class="toasts" aria-live="polite"></div><script type="module" src="/app.bundle.js"></script></body></html>
++<div id="toastRegion" class="toasts" aria-live="polite"></div><script type="module" src="/app.js"></script></body></html>
